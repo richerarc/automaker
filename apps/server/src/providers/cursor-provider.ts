@@ -7,7 +7,10 @@
  * - Session ID tracking
  * - Versions directory detection
  *
- * Spawns the cursor-agent CLI with --output-format stream-json for streaming responses.
+ * CLI shape differs from OpenAI Codex (`codex exec … --json` + stdin + `-`):
+ * Cursor Agent requires `--print` for non-interactive use; `--output-format` and
+ * `--stream-partial-output` only apply with `--print` (see Cursor CLI parameters).
+ * The user prompt is passed as the final positional argument, not via stdin.
  */
 
 import { execSync } from 'child_process';
@@ -400,8 +403,7 @@ export class CursorProvider extends CliProvider {
   }
 
   /**
-   * Extract prompt text from ExecuteOptions
-   * Used to pass prompt via stdin instead of CLI args to avoid shell escaping issues
+   * Extract prompt text from ExecuteOptions for the cursor-agent positional prompt argument.
    */
   private extractPromptText(options: ExecuteOptions): string {
     if (typeof options.prompt === 'string') {
@@ -420,9 +422,8 @@ export class CursorProvider extends CliProvider {
     // Model is already bare (no prefix) - validated by executeQuery
     const model = options.model || 'auto';
 
-    // Build CLI arguments for cursor-agent
-    // NOTE: Prompt is NOT included here - it's passed via stdin to avoid
-    // shell escaping issues when content contains $(), backticks, etc.
+    // Build CLI arguments for cursor-agent. Prompt is the final positional argument
+    // (spawn passes argv directly; no shell interpolation on typical native/WSL paths).
     const cliArgs: string[] = [];
 
     // If using Cursor IDE (cliPath is 'cursor' not 'cursor-agent'), add 'agent' subcommand
@@ -431,10 +432,10 @@ export class CursorProvider extends CliProvider {
     }
 
     cliArgs.push(
-      '-p', // Print mode (non-interactive)
+      '--print', // Required: --output-format / --stream-partial-output only work with --print
       '--output-format',
       'stream-json',
-      '--stream-partial-output' // Real-time streaming
+      '--stream-partial-output'
     );
 
     // In read-only mode, use --mode ask for Q&A style (no tools)
@@ -455,8 +456,7 @@ export class CursorProvider extends CliProvider {
       cliArgs.push('--resume', options.sdkSessionId);
     }
 
-    // Use '-' to indicate reading prompt from stdin
-    cliArgs.push('-');
+    cliArgs.push(this.extractPromptText(options));
 
     return cliArgs;
   }
@@ -870,15 +870,8 @@ export class CursorProvider extends CliProvider {
     // Embed system prompt into user prompt (Cursor CLI doesn't support separate system messages)
     const effectiveOptions = this.embedSystemPromptIntoPrompt(options);
 
-    // Extract prompt text to pass via stdin (avoids shell escaping issues)
-    const promptText = this.extractPromptText(effectiveOptions);
-
     const cliArgs = this.buildCliArgs(effectiveOptions);
     const subprocessOptions = this.buildSubprocessOptions(options, cliArgs);
-
-    // Pass prompt via stdin to avoid shell interpretation of special characters
-    // like $(), backticks, etc. that may appear in file content
-    subprocessOptions.stdinData = promptText;
 
     let sessionId: string | undefined;
 
