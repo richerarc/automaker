@@ -6,7 +6,11 @@
  */
 
 import type { CursorModelId, LegacyCursorModelId } from './cursor-models.js';
-import { LEGACY_CURSOR_MODEL_MAP, CURSOR_MODEL_MAP } from './cursor-models.js';
+import {
+  LEGACY_CURSOR_MODEL_MAP,
+  CURSOR_MODEL_MAP,
+  RETIRED_CURSOR_MODEL_MAP,
+} from './cursor-models.js';
 import type { OpencodeModelId, LegacyOpencodeModelId } from './opencode-models.js';
 import {
   LEGACY_OPENCODE_MODEL_MAP,
@@ -53,6 +57,12 @@ export function isLegacyClaudeAlias(id: string): boolean {
 export function migrateModelId(legacyId: string | undefined | null): string {
   if (!legacyId) {
     return legacyId as string;
+  }
+
+  const retiredReplacement =
+    RETIRED_CURSOR_MODEL_MAP[legacyId as keyof typeof RETIRED_CURSOR_MODEL_MAP];
+  if (retiredReplacement) {
+    return retiredReplacement;
   }
 
   // Already has cursor- prefix and is in the map - it's canonical
@@ -106,6 +116,11 @@ export function migrateCursorModelIds(ids: string[]): CursorModelId[] {
   }
 
   return ids.map((id) => {
+    const retired = RETIRED_CURSOR_MODEL_MAP[id as keyof typeof RETIRED_CURSOR_MODEL_MAP];
+    if (retired) {
+      return retired;
+    }
+
     // Already canonical
     if (id.startsWith('cursor-') && id in CURSOR_MODEL_MAP) {
       return id as CursorModelId;
@@ -200,7 +215,7 @@ export function migratePhaseModelEntry(
  *
  * When calling provider CLIs, we need to strip the provider prefix:
  * - 'cursor-auto' -> 'auto' (for Cursor CLI)
- * - 'cursor-composer-1' -> 'composer-1' (for Cursor CLI)
+ * - 'cursor-composer-2' -> 'composer-2' (for Cursor CLI)
  * - 'opencode-big-pickle' -> 'big-pickle' (for OpenCode CLI)
  *
  * Note: GPT models via Cursor keep the gpt- part: 'cursor-gpt-5.2' -> 'gpt-5.2'

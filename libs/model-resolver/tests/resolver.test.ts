@@ -114,10 +114,19 @@ describe('model-resolver', () => {
 
     describe('with Cursor models', () => {
       it('should pass through cursor-prefixed model unchanged', () => {
+        const result = resolveModelString('cursor-composer-2');
+
+        expect(result).toBe('cursor-composer-2');
+        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Using Cursor model'));
+      });
+
+      it('should migrate retired cursor-composer-1 to cursor-composer-2', () => {
         const result = resolveModelString('cursor-composer-1');
 
-        expect(result).toBe('cursor-composer-1');
-        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Using Cursor model'));
+        expect(result).toBe('cursor-composer-2');
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Migrated legacy ID: "cursor-composer-1" -> "cursor-composer-2"')
+        );
       });
 
       it('should handle cursor-auto model', () => {
@@ -135,10 +144,10 @@ describe('model-resolver', () => {
       it('should add cursor- prefix to bare Cursor model IDs', () => {
         const result = resolveModelString('composer-1');
 
-        expect(result).toBe('cursor-composer-1');
+        expect(result).toBe('cursor-composer-2');
         // Legacy bare IDs are migrated to canonical prefixed format
         expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.stringContaining('Migrated legacy ID: "composer-1" -> "cursor-composer-1"')
+          expect.stringContaining('Migrated legacy ID: "composer-1" -> "cursor-composer-2"')
         );
       });
 
@@ -509,7 +518,7 @@ describe('model-resolver', () => {
         const entry: PhaseModelEntry = { model: 'composer-1', thinkingLevel: 'high' };
         const result = resolvePhaseModel(entry);
 
-        expect(result.model).toBe('cursor-composer-1');
+        expect(result.model).toBe('cursor-composer-2');
         expect(result.thinkingLevel).toBe('high');
       });
 
