@@ -7,7 +7,8 @@
  */
 export type CursorModelId =
   | 'cursor-auto' // Auto-select best model
-  | 'cursor-composer-1' // Cursor Composer agent model
+  | 'cursor-composer-2' // Cursor Composer 2 agent model
+  | 'cursor-composer-2-fast' // Cursor Composer 2 fast agent model
   | 'cursor-sonnet-4.6' // Claude Sonnet 4.6
   | 'cursor-sonnet-4.6-thinking' // Claude Sonnet 4.6 with extended thinking
   | 'cursor-sonnet-4.5' // Claude Sonnet 4.5
@@ -29,14 +30,14 @@ export type CursorModelId =
   | 'cursor-gpt-5.2-codex-high' // GPT-5.2 Codex High via Cursor
   | 'cursor-gpt-5.2-codex-max' // GPT-5.2 Codex Max via Cursor
   | 'cursor-gpt-5.2-codex-max-high' // GPT-5.2 Codex Max High via Cursor
-  | 'cursor-grok'; // Grok
+  | 'cursor-grok' // Grok
+  | 'cursor-kimi-k2.5'; // Kimi K2.5 via Cursor
 
 /**
  * Legacy Cursor model IDs (without prefix) for migration support
  */
 export type LegacyCursorModelId =
   | 'auto'
-  | 'composer-1'
   | 'sonnet-4.6'
   | 'sonnet-4.6-thinking'
   | 'sonnet-4.5'
@@ -72,12 +73,20 @@ export const CURSOR_MODEL_MAP: Record<CursorModelId, CursorModelConfig> = {
     hasThinking: false,
     supportsVision: false, // Vision not yet supported by Cursor CLI
   },
-  'cursor-composer-1': {
-    id: 'cursor-composer-1',
-    label: 'Composer 1',
-    description: 'Cursor Composer agent model optimized for multi-file edits',
-    hasThinking: false,
-    supportsVision: false,
+  'cursor-composer-2': {
+    id: 'cursor-composer-2',
+    label: 'Composer 2',
+    description: 'Cursor Composer 2 agent model optimized for thinking and writing code',
+    hasThinking: true,
+    supportsVision: true,
+  },
+  'cursor-composer-2-fast': {
+    id: 'cursor-composer-2-fast',
+    label: 'Composer 2 Fast',
+    description:
+      'Cursor Composer 2 fast agent model optimized for thinking and writing code, faster',
+    hasThinking: true,
+    supportsVision: true,
   },
   'cursor-sonnet-4.6': {
     id: 'cursor-sonnet-4.6',
@@ -233,6 +242,13 @@ export const CURSOR_MODEL_MAP: Record<CursorModelId, CursorModelConfig> = {
     hasThinking: false,
     supportsVision: false,
   },
+  'cursor-kimi-k2.5': {
+    id: 'cursor-kimi-k2.5',
+    label: 'Kimi K2.5',
+    description: 'Kimi K2.5 via Cursor',
+    hasThinking: true,
+    supportsVision: true,
+  },
 };
 
 /**
@@ -240,7 +256,6 @@ export const CURSOR_MODEL_MAP: Record<CursorModelId, CursorModelConfig> = {
  */
 export const LEGACY_CURSOR_MODEL_MAP: Record<LegacyCursorModelId, CursorModelId> = {
   auto: 'cursor-auto',
-  'composer-1': 'cursor-composer-1',
   'sonnet-4.6': 'cursor-sonnet-4.6',
   'sonnet-4.6-thinking': 'cursor-sonnet-4.6-thinking',
   'sonnet-4.5': 'cursor-sonnet-4.5',
@@ -446,6 +461,17 @@ export const CURSOR_MODEL_GROUPS: GroupedModel[] = [
       },
     ],
   },
+  // Composer 2 group (thinking mode)
+  {
+    baseId: 'cursor-composer-2-group',
+    label: 'Composer 2',
+    description: 'Cursor Composer 2 agent model optimized for thinking and writing code',
+    variantType: 'thinking',
+    variants: [
+      { id: 'cursor-composer-2', label: 'Standard', description: 'Standard responses' },
+      { id: 'cursor-composer-2-fast', label: 'Fast', description: 'Faster responses' },
+    ],
+  },
 ];
 
 /**
@@ -454,11 +480,11 @@ export const CURSOR_MODEL_GROUPS: GroupedModel[] = [
  */
 export const STANDALONE_CURSOR_MODELS: CursorModelId[] = [
   'cursor-auto',
-  'cursor-composer-1',
   'cursor-opus-4.1',
   'cursor-gemini-3-pro',
   'cursor-gemini-3-flash',
   'cursor-grok',
+  'cursor-kimi-k2.5',
 ];
 
 /**
