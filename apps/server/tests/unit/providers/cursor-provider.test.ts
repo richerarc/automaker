@@ -87,6 +87,53 @@ describe('cursor-provider.ts', () => {
 
       expect(args[args.length - 1]).toBe(prompt);
     });
+
+    it('uses stdin placeholder as final arg on Windows when npx strategy', () => {
+      const origPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        const provider = Object.create(CursorProvider.prototype) as CursorProvider & {
+          cliPath?: string;
+          detectedStrategy?: string;
+        };
+        provider.cliPath = 'C:\\npx';
+        provider.detectedStrategy = 'npx';
+
+        const prompt = 'Large or special prompt';
+        const args = provider.buildCliArgs({
+          prompt,
+          model: 'gpt-5',
+          cwd: '/tmp/project',
+        });
+
+        expect(args[args.length - 1]).toBe('-');
+      } finally {
+        Object.defineProperty(process, 'platform', { value: origPlatform });
+      }
+    });
+
+    it('uses stdin placeholder as final arg on Windows when CLI is a .cmd shim', () => {
+      const origPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        const provider = Object.create(CursorProvider.prototype) as CursorProvider & {
+          cliPath?: string;
+          detectedStrategy?: string;
+        };
+        provider.cliPath = 'C:\\Users\\u\\AppData\\Roaming\\npm\\cursor-agent.cmd';
+        provider.detectedStrategy = 'native';
+
+        const args = provider.buildCliArgs({
+          prompt: 'x',
+          model: 'gpt-5',
+          cwd: '/tmp/project',
+        });
+
+        expect(args[args.length - 1]).toBe('-');
+      } finally {
+        Object.defineProperty(process, 'platform', { value: origPlatform });
+      }
+    });
   });
 
   describe('normalizeEvent - result error handling', () => {

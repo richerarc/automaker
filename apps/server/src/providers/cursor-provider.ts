@@ -10,7 +10,10 @@
  * CLI shape differs from OpenAI Codex (`codex exec … --json` + stdin + `-`):
  * Cursor Agent requires `--print` for non-interactive use; `--output-format` and
  * `--stream-partial-output` only apply with `--print` (see Cursor CLI parameters).
- * The user prompt is passed as the final positional argument, not via stdin.
+ * On most platforms the user prompt is the final positional argument. On Windows
+ * when the subprocess runs with `shell: true` (see platform `spawnJSONLProcess`,
+ * e.g. `.cmd` shims or `npx`), the prompt is sent via stdin with `-` as the final
+ * argv element to avoid cmd.exe metacharacter interpretation and command-line length limits.
  */
 
 import { execSync } from 'child_process';
@@ -45,7 +48,7 @@ import {
   CURSOR_MODEL_MAP,
 } from '@automaker/types';
 import { createLogger, isAbortError } from '@automaker/utils';
-import { spawnJSONLProcess, execInWsl } from '@automaker/platform';
+import { spawnJSONLProcess, execInWsl, type SubprocessOptions } from '@automaker/platform';
 
 // Create logger for this module
 const logger = createLogger('CursorProvider');
@@ -403,6 +406,17 @@ export class CursorProvider extends CliProvider {
   }
 
   /**
+   * True when `spawnJSONLProcess` will use `shell: true` on Windows (see platform
+   * subprocess: `.cmd`, `npx`, `npm`). In that case the prompt must not be a raw argv tail.
+   */
+  private useStdinForPrompt(): boolean {
+    if (process.platform !== 'win32') return false;
+    if (this.detectedStrategy === 'npx') return true;
+    if (!this.cliPath) return false;
+    return this.cliPath.toLowerCase().endsWith('.cmd');
+  }
+
+  /**
    * Extract prompt text from ExecuteOptions for the cursor-agent positional prompt argument.
    */
   private extractPromptText(options: ExecuteOptions): string {
@@ -456,9 +470,28 @@ export class CursorProvider extends CliProvider {
       cliArgs.push('--resume', options.sdkSessionId);
     }
 
-    cliArgs.push(this.extractPromptText(options));
+    if (this.useStdinForPrompt()) {
+      cliArgs.push('-');
+    } else {
+      cliArgs.push(this.extractPromptText(options));
+    }
 
     return cliArgs;
+  }
+
+  /**
+   * Pass prompt on stdin when Windows spawns with a shell; otherwise same as base.
+   */
+  protected buildSubprocessOptions(options: ExecuteOptions, cliArgs: string[]): SubprocessOptions {
+    const subprocessOptions = super.buildSubprocessOptions(options, cliArgs);
+    if (!this.useStdinForPrompt()) {
+      return subprocessOptions;
+    }
+    const effectiveOptions = this.embedSystemPromptIntoPrompt(options);
+    return {
+      ...subprocessOptions,
+      stdinData: this.extractPromptText(effectiveOptions),
+    };
   }
 
   /**
