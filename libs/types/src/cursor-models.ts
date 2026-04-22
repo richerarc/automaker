@@ -40,6 +40,9 @@ export type LegacyCursorModelId =
   | 'auto'
   /** @deprecated Composer 1 removed; migrates to cursor-composer-2 */
   | 'composer-1'
+  | 'composer-2'
+  | 'composer-2-fast'
+  | 'kimi-k2.5'
   | 'sonnet-4.6'
   | 'sonnet-4.6-thinking'
   | 'sonnet-4.5'
@@ -80,7 +83,7 @@ export const CURSOR_MODEL_MAP: Record<CursorModelId, CursorModelConfig> = {
     label: 'Composer 2',
     description: 'Cursor Composer 2 agent model optimized for thinking and writing code',
     hasThinking: true,
-    supportsVision: true,
+    supportsVision: false, // Cursor CLI does not pass images; matches other Cursor models
   },
   'cursor-composer-2-fast': {
     id: 'cursor-composer-2-fast',
@@ -88,7 +91,7 @@ export const CURSOR_MODEL_MAP: Record<CursorModelId, CursorModelConfig> = {
     description:
       'Cursor Composer 2 fast agent model optimized for thinking and writing code, faster',
     hasThinking: true,
-    supportsVision: true,
+    supportsVision: false, // Cursor CLI does not pass images; matches other Cursor models
   },
   'cursor-sonnet-4.6': {
     id: 'cursor-sonnet-4.6',
@@ -249,7 +252,7 @@ export const CURSOR_MODEL_MAP: Record<CursorModelId, CursorModelConfig> = {
     label: 'Kimi K2.5',
     description: 'Kimi K2.5 via Cursor',
     hasThinking: true,
-    supportsVision: true,
+    supportsVision: false, // Cursor CLI does not pass images; matches other Cursor models
   },
 };
 
@@ -259,6 +262,9 @@ export const CURSOR_MODEL_MAP: Record<CursorModelId, CursorModelConfig> = {
 export const LEGACY_CURSOR_MODEL_MAP: Record<LegacyCursorModelId, CursorModelId> = {
   auto: 'cursor-auto',
   'composer-1': 'cursor-composer-2',
+  'composer-2': 'cursor-composer-2',
+  'composer-2-fast': 'cursor-composer-2-fast',
+  'kimi-k2.5': 'cursor-kimi-k2.5',
   'sonnet-4.6': 'cursor-sonnet-4.6',
   'sonnet-4.6-thinking': 'cursor-sonnet-4.6-thinking',
   'sonnet-4.5': 'cursor-sonnet-4.5',
@@ -307,7 +313,7 @@ export function getAllCursorModelIds(): CursorModelId[] {
 /**
  * Type of variant options available for grouped models
  */
-export type VariantType = 'compute' | 'thinking' | 'capacity';
+export type VariantType = 'compute' | 'thinking' | 'capacity' | 'speed';
 
 /**
  * A single variant option within a grouped model
@@ -471,12 +477,12 @@ export const CURSOR_MODEL_GROUPS: GroupedModel[] = [
       },
     ],
   },
-  // Composer 2 group (thinking mode)
+  // Composer 2 group (Standard vs faster responses)
   {
     baseId: 'cursor-composer-2-group',
     label: 'Composer 2',
     description: 'Cursor Composer 2 agent model optimized for thinking and writing code',
-    variantType: 'thinking',
+    variantType: 'speed',
     variants: [
       { id: 'cursor-composer-2', label: 'Standard', description: 'Standard responses' },
       { id: 'cursor-composer-2-fast', label: 'Fast', description: 'Faster responses' },
