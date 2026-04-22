@@ -151,6 +151,17 @@ describe('model-resolver', () => {
         );
       });
 
+      it.each([
+        ['composer-2', 'cursor-composer-2'],
+        ['composer-2-fast', 'cursor-composer-2-fast'],
+        ['kimi-k2.5', 'cursor-kimi-k2.5'],
+      ] as const)('migrates bare Cursor id %s -> %s', (input, expected) => {
+        expect(resolveModelString(input)).toBe(expected);
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining(`Migrated legacy ID: "${input}" -> "${expected}"`)
+        );
+      });
+
       it('should add cursor- prefix to auto model', () => {
         const result = resolveModelString('auto');
 
