@@ -115,30 +115,32 @@ export function migrateCursorModelIds(ids: string[]): CursorModelId[] {
     return [];
   }
 
-  return ids.map((id) => {
-    const retired = RETIRED_CURSOR_MODEL_MAP[id as keyof typeof RETIRED_CURSOR_MODEL_MAP];
-    if (retired) {
-      return retired;
-    }
+  return ids
+    .map((id) => {
+      const retired = RETIRED_CURSOR_MODEL_MAP[id as keyof typeof RETIRED_CURSOR_MODEL_MAP];
+      if (retired) {
+        return retired;
+      }
 
-    // Already canonical
-    if (id.startsWith('cursor-') && id in CURSOR_MODEL_MAP) {
-      return id as CursorModelId;
-    }
+      // Already canonical
+      if (id.startsWith('cursor-') && id in CURSOR_MODEL_MAP) {
+        return id as CursorModelId;
+      }
 
-    // Legacy ID
-    if (isLegacyCursorModelId(id)) {
-      return LEGACY_CURSOR_MODEL_MAP[id];
-    }
+      // Legacy ID
+      if (isLegacyCursorModelId(id)) {
+        return LEGACY_CURSOR_MODEL_MAP[id];
+      }
 
-    // Unknown - assume it might be a valid cursor model with prefix
-    if (id.startsWith('cursor-')) {
-      return id as CursorModelId;
-    }
+      // Unknown - assume it might be a valid cursor model with prefix
+      if (id.startsWith('cursor-')) {
+        return id as CursorModelId;
+      }
 
-    // Add prefix if not present
-    return `cursor-${id}` as CursorModelId;
-  });
+      // Add prefix if not present
+      return `cursor-${id}` as CursorModelId;
+    })
+    .filter((id, index, self) => self.indexOf(id) === index);
 }
 
 /**
